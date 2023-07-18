@@ -11,7 +11,7 @@ class ScanPay {
   call(
     BuildContext context, {
     required ScanPayType scanPayType,
-    String? headerText,
+    String? helpText,
     String? titleButtonText,
     Color? backgroundColor,
     Color? secondaryColor,
@@ -29,7 +29,7 @@ class ScanPay {
         MaterialPageRoute(
           builder: (context) {
             return ScannerView(
-              headerText: headerText,
+              headerText: helpText,
               helpTextStyle: helpTextStyle,
               primaryColor: primaryColor,
               secondaryColor: secondaryColor,

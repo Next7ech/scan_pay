@@ -51,7 +51,7 @@ class _HomeFinancialState extends State<HomeFinancial> {
               detectorSecudaryColor: Colors.red,
               primaryColor: Colors.red,
               secondaryColor: Colors.white,
-              headerText: 'Scan Slip',
+              helpText: 'Scan Slip',
               digitableBoletoPage: () => const Text('Digitable Boleto'),
               titleButtonText: 'Cancel',
               titleButtonTextStyle: const TextStyle(

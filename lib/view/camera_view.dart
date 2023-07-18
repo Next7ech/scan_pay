@@ -217,7 +217,7 @@ class _CameraViewState extends State<CameraView>
                     width: size.width * 0.8,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: widget.primaryColor ?? Colors.white,
+                      color: widget.secondaryColor ?? Colors.white,
                     ),
                     child: Center(
                         child: Text(
