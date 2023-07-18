@@ -1,36 +1,50 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'core/enum/scan_pay_type_enum.dart';
 import 'view/scanner_view.dart';
 
 List<CameraDescription> fiancialScannerCameras = [];
 
-class ScanPayController {
-  void openScanner(
+class ScanPay {
+  call(
     BuildContext context, {
     required ScanPayType scanPayType,
+    String? headerText,
+    String? titleButtonText,
+    Color? backgroundColor,
+    Color? secondaryColor,
+    Color? primaryColor,
+    Color? detectorPrimaryColor,
+    Color? detectorSecudaryColor,
+    TextStyle? titleButtonTextStyle,
+    TextStyle? helpTextStyle,
     required Function(String) onSuccess,
-    Function()? accessInputField,
-    String? pageToBack,
-    Color? colorBackground,
+    Function()? digitableBoletoPage,
   }) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScannerView(
-          onSuccess: (code) => onSuccess(code),
-          accessInputField: () => accessInputField,
-          colorBackground: colorBackground,
-          pageToBack: pageToBack,
-          scanningType: scanPayType,
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            return ScannerView(
+              headerText: headerText,
+              helpTextStyle: helpTextStyle,
+              primaryColor: primaryColor,
+              secondaryColor: secondaryColor,
+              titleButtonTextStyle: titleButtonTextStyle,
+              titleButtonText: titleButtonText,
+              detectorPrimaryColor: detectorPrimaryColor,
+              detectorSecudaryColor: detectorSecudaryColor,
+              digitableBoletoPage: () => digitableBoletoPage,
+              onSuccess: (code) => onSuccess(code),
+              backgroundColor: backgroundColor,
+              scanningType: scanPayType,
+            );
+          },
         ),
-      ),
-    );
-  }
-
-  /// This method is used to initialize the camera
-  static Future<void> intiCamera() async {
-    fiancialScannerCameras = await availableCameras();
+      );
+    });
   }
 }

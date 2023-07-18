@@ -1,10 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:scan_pay/core/enum/scan_pay_type_enum.dart';
 import 'package:scan_pay/scan_pay.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await ScanPayController.intiCamera();
+import 'info_code.dart';
+
+void main() {
   runApp(const MyApp());
 }
 
@@ -31,7 +32,7 @@ class HomeFinancial extends StatefulWidget {
 }
 
 class _HomeFinancialState extends State<HomeFinancial> {
-  final ScanPayController scanPayController = ScanPayController();
+  final ScanPay scanPay = ScanPay();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,33 +41,151 @@ class _HomeFinancialState extends State<HomeFinancial> {
         title: const Text('Financial Example'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                scanPayController.openScanner(
+        child: ElevatedButton(
+          onPressed: () {
+            scanPay(
+              context,
+              scanPayType: ScanPayType.barcode,
+              backgroundColor: Colors.black.withOpacity(0.5),
+              detectorPrimaryColor: Colors.white,
+              detectorSecudaryColor: Colors.red,
+              primaryColor: Colors.red,
+              secondaryColor: Colors.white,
+              headerText: 'Scan Slip',
+              digitableBoletoPage: () => const Text('Digitable Boleto'),
+              titleButtonText: 'Cancel',
+              titleButtonTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+              helpTextStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+              onSuccess: (code) {
+                Navigator.pop(context);
+                Navigator.push(
                   context,
-                  onSuccess: (code) {
-                    print('Scanned code: $code');
-                  },
-                  scanPayType: ScanPayType.qrCode,
-                  accessInputField: () {
-                    // Handle accessing input field
-                    print('Accessing input field');
-                  },
-                  pageToBack: 'Previous Page',
-                  colorBackground: Colors.blue,
+                  MaterialPageRoute(
+                    builder: (context) => InfoCode(code: code),
+                  ),
                 );
               },
-              child: const Text('QrCode Scanner'),
+            );
+          },
+          child: const Text('Scan Slip'),
+        ),
+      ),
+    );
+  }
+}
+
+class BorderDetect extends StatelessWidget {
+  const BorderDetect({
+    super.key,
+    required this.width,
+    required this.height,
+    required this.color,
+  });
+
+  final double width;
+  final double height;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          children: [
+            Positioned(
+              right: 0,
+              left: 0,
+              top: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  CustomPaint(
+                    size: const Size(10, 10),
+                    painter: CustomShapePainter(
+                      rotation: 0,
+                      fillColor: color,
+                    ),
+                  ),
+                  CustomPaint(
+                    size: const Size(10, 10),
+                    painter: CustomShapePainter(
+                      rotation: 90,
+                      fillColor: color,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(
-              height: 20,
+            Positioned(
+              right: 0,
+              left: 0,
+              bottom: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  CustomPaint(
+                    size: const Size(10, 10),
+                    painter: CustomShapePainter(
+                      rotation: 270,
+                      fillColor: color,
+                    ),
+                  ),
+                  CustomPaint(
+                    size: const Size(10, 10),
+                    painter: CustomShapePainter(
+                      rotation: 180,
+                      fillColor: color,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class CustomShapePainter extends CustomPainter {
+  final Color fillColor;
+  final int rotation;
+
+  CustomShapePainter({required this.fillColor, required this.rotation});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double centerX = size.width / 2;
+    final double centerY = size.height / 2;
+
+    final Path path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(0, 30)
+      ..lineTo(10, 30)
+      ..lineTo(10, 10)
+      ..lineTo(30, 10)
+      ..lineTo(30, 0)
+      ..close();
+
+    double rotationInRadians = rotation * (pi / 180); // Convert to radians
+    canvas.translate(centerX, centerY); // Move to the center of the canvas
+    canvas.rotate(rotationInRadians); // Apply rotation
+    canvas.translate(-centerX, -centerY); // Move back to the original position
+
+    final Paint fillPaint = Paint()..color = fillColor;
+    canvas.drawPath(path, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return false;
   }
 }

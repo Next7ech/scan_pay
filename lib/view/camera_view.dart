@@ -13,10 +13,23 @@ class CameraView extends StatefulWidget {
     required this.detectorCode,
     required this.onImage,
     this.accessInputField,
-    this.pageToBack,
     this.colorBackground,
     required this.scanPayType,
+    this.titleButtonText,
+    this.helpText,
+    this.titleButtonTextStyle,
+    this.secondaryColor,
+    this.primaryColor,
+    this.helpTextStyle,
   }) : super(key: key);
+
+  final String? titleButtonText;
+
+  final TextStyle? titleButtonTextStyle;
+
+  final String? helpText;
+
+  final TextStyle? helpTextStyle;
 
   final Widget? detectorCode;
 
@@ -24,9 +37,10 @@ class CameraView extends StatefulWidget {
 
   final Function()? accessInputField;
 
-  final String? pageToBack;
-
   final Color? colorBackground;
+
+  final Color? secondaryColor;
+  final Color? primaryColor;
 
   final ScanPayType scanPayType;
 
@@ -36,7 +50,8 @@ class CameraView extends StatefulWidget {
   State<CameraView> createState() => _CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> {
+class _CameraViewState extends State<CameraView>
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController _controller = CameraController(
     const CameraDescription(
       name: '',
@@ -56,15 +71,11 @@ class _CameraViewState extends State<CameraView> {
 
   void _initializeCamera() async {
     final cameras = await availableCameras();
-
     if (cameras.isEmpty) {
-      Container();
+      return;
     }
-
     final initialDirection = widget.initialDirection;
-
     CameraDescription? selectedCamera;
-
     for (var camera in cameras) {
       if (camera.lensDirection == initialDirection &&
           camera.sensorOrientation == 90) {
@@ -72,7 +83,6 @@ class _CameraViewState extends State<CameraView> {
         break;
       }
     }
-
     if (selectedCamera == null) {
       for (var camera in cameras) {
         if (camera.lensDirection == initialDirection) {
@@ -81,7 +91,6 @@ class _CameraViewState extends State<CameraView> {
         }
       }
     }
-
     if (selectedCamera != null) {
       _controller = CameraController(selectedCamera, ResolutionPreset.high);
       await _controller.initialize();
@@ -96,10 +105,25 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopLiveFeed();
     _controller.dispose();
-
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_controller.value.isInitialized) {
+      return;
+    }
+    if (state == AppLifecycleState.inactive) {
+      _controller.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      _initializeCamera();
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -114,165 +138,146 @@ class _CameraViewState extends State<CameraView> {
       return Container();
     }
     final size = MediaQuery.of(context).size;
-
     var scale = (size.aspectRatio) * _controller.value.aspectRatio;
-
     if (scale < 1) scale = 1 / scale;
-
-    return SafeArea(
-      child: Container(
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Transform.scale(
-              scale: scale,
-              child: Center(
-                child: CameraPreview(_controller),
-              ),
-            ),
-            Visibility(
-              replacement: const Offstage(),
-              visible: widget.detectorCode != null,
-              child: widget.detectorCode ?? const Offstage(),
-            ),
-            Visibility(
-              visible: widget.scanPayType == ScanPayType.barcode,
-              replacement: Positioned(
-                child: AppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  actions: [
-                    IconButton(
-                      padding: const EdgeInsets.all(0),
-                      icon: Icon(
-                        _controller.value.flashMode == FlashMode.off
-                            ? Icons.flashlight_off
-                            : Icons.flashlight_on,
-                        color: _controller.value.flashMode == FlashMode.off
-                            ? Colors.white
-                            : Colors.yellow,
-                      ),
-                      onPressed: () {
-                        if (_controller.value.flashMode == FlashMode.off) {
-                          _controller.setFlashMode(FlashMode.torch);
-                        } else {
-                          _controller.setFlashMode(FlashMode.off);
-                        }
-                        setState(() {});
-                      },
-                      iconSize: 38,
-                    ),
-                  ],
-                ),
-              ),
-              child: Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  width: size.width / 4,
-                  height: size.height,
-                  color: widget.colorBackground?.withOpacity(.5) ??
-                      Colors.blue.withOpacity(.5),
-                  child: RotatedBox(
-                    quarterTurns: 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Offstage(),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.colorBackground,
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.keyboard,
-                                  color: Colors.black, size: 20),
-                              SizedBox(width: 10),
-                              Text(
-                                'Digitar código de barras',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                            ],
-                          ),
-                          onPressed: () => widget.accessInputField,
-                        ),
-                        TextButton(
-                          child: Text(
-                            widget.pageToBack ?? '',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Visibility(
-              visible: widget.scanPayType == ScanPayType.barcode,
-              child: Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: size.width / 4,
-                  height: size.height,
-                  color: widget.colorBackground?.withOpacity(.5) ??
-                      Colors.blue.withOpacity(.5),
-                  child: RotatedBox(
-                    quarterTurns: 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Offstage(),
-                        ),
-                        Text(
-                          textAlign: TextAlign.center,
-                          'Posicione o código de barras no centro da tela',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(
-                                color: Colors.white,
-                              ),
-                        ),
-                        IconButton(
-                          padding: const EdgeInsets.all(0),
-                          icon: Icon(
-                            _controller.value.flashMode == FlashMode.off
-                                ? Icons.flashlight_off
-                                : Icons.flashlight_on,
-                            color: _controller.value.flashMode == FlashMode.off
-                                ? Colors.white
-                                : Colors.yellow,
-                          ),
-                          onPressed: () {
-                            if (_controller.value.flashMode == FlashMode.off) {
-                              _controller.setFlashMode(FlashMode.torch);
-                            } else {
-                              _controller.setFlashMode(FlashMode.off);
-                            }
-                            setState(() {});
-                          },
-                          iconSize: 38,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Transform.scale(
+          scale: scale,
+          child: Center(
+            child: CameraPreview(_controller),
+          ),
         ),
-      ),
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            widget.colorBackground ?? Colors.black.withOpacity(0.5),
+            BlendMode.srcOut,
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  backgroundBlendMode: BlendMode.dstOut,
+                ),
+              ),
+              Align(
+                alignment: Alignment.center,
+                child: Container(
+                  width: size.width * 0.3,
+                  height: size.height * 0.7,
+                  decoration: const BoxDecoration(
+                    color: Colors.amber,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Center(
+          child: SizedBox(
+            width: size.width * 0.3,
+            height: size.height * 0.7,
+            child: widget.detectorCode ?? const Offstage(),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          child: RotatedBox(
+            quarterTurns: 1,
+            child: Container(
+              width: size.height,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(54, 54),
+                      elevation: 8,
+                      foregroundColor: widget.secondaryColor ?? Colors.black,
+                      backgroundColor: widget.primaryColor ?? Colors.white,
+                      shape: const CircleBorder(),
+                    ),
+                    child: Transform.scale(
+                      scale: 1.2,
+                      child: Icon(
+                        Icons.arrow_back,
+                        size: 24,
+                        color: widget.secondaryColor ?? Colors.black,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: size.width * 0.8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: widget.primaryColor ?? Colors.white,
+                    ),
+                    child: Center(
+                        child: Text(
+                      widget.helpText ?? '',
+                      style: widget.helpTextStyle ??
+                          Theme.of(context).textTheme.labelLarge,
+                    )),
+                  ),
+                  Visibility(
+                    visible: false,
+                    replacement:
+                        IconButton(onPressed: () {}, icon: const Offstage()),
+                    child: FlashOnWidget(
+                      onPressed: () {},
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          child: RotatedBox(
+            quarterTurns: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                vertical: 24,
+              ),
+              width: size.height,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: widget.accessInputField,
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(272, 54),
+                      padding: const EdgeInsets.all(16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      elevation: 8,
+                      foregroundColor: widget.secondaryColor ?? Colors.black,
+                      backgroundColor: widget.primaryColor ?? Colors.white,
+                    ),
+                    child: Text(
+                      widget.titleButtonText ?? '',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: widget.secondaryColor ?? Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -296,12 +301,16 @@ class _CameraViewState extends State<CameraView> {
   }
 
   Future _stopLiveFeed() async {
-    await _controller.stopImageStream();
-    await _controller.dispose();
-    _controller;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_controller.value.isInitialized == false) {
+        await _controller.stopImageStream();
+        await _controller.dispose();
+      }
+      _controller;
+    });
   }
 
-  void _processCameraImage(CameraImage image) {
+  _processCameraImage(CameraImage image) {
     final inputImage = _inputImageFromCameraImage(image);
     if (inputImage == null) return;
     widget.onImage(inputImage);
@@ -337,5 +346,40 @@ class _CameraViewState extends State<CameraView> {
   void deactivate() {
     super.deactivate();
     _stopLiveFeed();
+    _stopLiveFeed();
+    _controller.dispose();
+  }
+}
+
+class FlashOnWidget extends StatelessWidget {
+  FlashOnWidget({
+    super.key,
+    required this.onPressed,
+  });
+  final Function() onPressed;
+  final ValueNotifier<bool> _isFlashOn = ValueNotifier<bool>(false);
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+        valueListenable: _isFlashOn,
+        builder: (context, value, child) {
+          return ElevatedButton(
+            onPressed: () {
+              _isFlashOn.value = !_isFlashOn.value;
+              onPressed();
+            },
+            style: ElevatedButton.styleFrom(
+              fixedSize: const Size(54, 54),
+              elevation: 8,
+              foregroundColor: Colors.black,
+              backgroundColor: Colors.amberAccent,
+              shape: const CircleBorder(),
+            ),
+            child: const Icon(
+              Icons.flash_on,
+              size: 24,
+            ),
+          );
+        });
   }
 }

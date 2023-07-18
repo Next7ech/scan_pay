@@ -1,60 +1,94 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 
 import '../core/enum/scan_pay_type_enum.dart';
 import '../core/painter/scanner_style_painter.dart';
+import '../scan_pay_controller.dart';
 import 'camera_view.dart';
 
 class ScannerView extends StatefulWidget {
   const ScannerView({
     super.key,
     required this.onSuccess,
-    this.accessInputField,
-    this.pageToBack,
-    this.colorBackground,
+    this.digitableBoletoPage,
+    this.backgroundColor,
     required this.scanningType,
+    required this.detectorPrimaryColor,
+    required this.detectorSecudaryColor,
+    this.headerText,
+    this.titleButtonText,
+    this.titleButtonTextStyle,
+    this.secondaryColor,
+    this.primaryColor,
+    this.helpTextStyle,
   });
+  final String? titleButtonText;
+
+  final String? headerText;
+
+  final Color? secondaryColor;
+
+  final Color? primaryColor;
+
+  final TextStyle? titleButtonTextStyle;
+
+  final TextStyle? helpTextStyle;
+
   final Function(String) onSuccess;
 
-  final Function()? accessInputField;
+  final Function()? digitableBoletoPage;
 
-  final String? pageToBack;
+  final Color? backgroundColor;
 
-  final Color? colorBackground;
   final ScanPayType scanningType;
+
+  final Color? detectorPrimaryColor;
+  final Color? detectorSecudaryColor;
   @override
   State<ScannerView> createState() => _ScannerViewState();
 }
 
 class _ScannerViewState extends State<ScannerView> {
   final BarcodeScanner _barcodeScanner = BarcodeScanner();
+
   bool _canProcess = true;
   bool _isBusy = false;
   Widget? _detectorCode;
-  String? _text;
 
   @override
   void dispose() {
-    _canProcess;
+    _canProcess = false;
     _barcodeScanner.close();
     super.dispose();
   }
 
   @override
   void initState() {
+    _scanInit();
     _canProcess = true;
     super.initState();
+  }
+
+  void _scanInit() async {
+    final List<CameraDescription> cameras = await availableCameras();
+    fiancialScannerCameras = cameras;
   }
 
   @override
   Widget build(BuildContext context) {
     return CameraView(
       scanPayType: widget.scanningType,
+      helpText: widget.headerText,
+      titleButtonText: widget.titleButtonText,
+      titleButtonTextStyle: widget.titleButtonTextStyle,
+      secondaryColor: widget.secondaryColor,
+      primaryColor: widget.primaryColor,
+      helpTextStyle: widget.helpTextStyle,
       detectorCode: _detectorCode ?? const Offstage(),
-      colorBackground: widget.colorBackground,
-      pageToBack: widget.pageToBack,
+      colorBackground: widget.backgroundColor,
       onImage: (inputImage) => processImage(inputImage),
-      accessInputField: () => widget.accessInputField!,
+      accessInputField: widget.digitableBoletoPage,
     );
   }
 
@@ -68,27 +102,21 @@ class _ScannerViewState extends State<ScannerView> {
 
     if (inputImage.metadata?.size != null &&
         inputImage.metadata?.rotation != null) {
-      final barcodePainter = ScannerDetectorPainter(
+      final painter = ScannerDetectorPainter(
         code: code,
+        detectorPrimaryColor: widget.detectorPrimaryColor ?? Colors.white,
+        detectorSecudaryColor: widget.detectorSecudaryColor ?? Colors.red,
       );
-      // final qrcodePainter = ScannerDetectorPainter(
-      //   code: code,
-      //   rectHeight: 250,
-      //   rectWidth: 250,
-      // );
-      _detectorCode = barcodePainter;
-      for (var element in code) {
-        final String? displayValue = element.displayValue;
-        if (displayValue != null) {
-          widget.onSuccess(displayValue);
-          _canProcess = false;
-        }
+      _detectorCode = CustomPaint(painter: painter);
+
+      if (_detectorCode != null && code.isNotEmpty) {
+        _canProcess = false;
+        widget.onSuccess(code.first.rawValue ?? '');
       }
     }
+    _isBusy = false;
     if (mounted) {
-      setState(() {
-        _isBusy = false;
-      });
+      setState(() {});
     }
   }
 }
