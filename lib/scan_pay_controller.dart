@@ -37,7 +37,7 @@ class ScanPay {
               titleButtonText: titleButtonText,
               detectorPrimaryColor: detectorPrimaryColor,
               detectorSecudaryColor: detectorSecudaryColor,
-              digitableBoletoPage: () => digitableBoletoPage,
+              digitableBoletoPage: digitableBoletoPage,
               onSuccess: (code) => onSuccess(code),
               backgroundColor: backgroundColor,
               scanningType: scanPayType,
