@@ -6,12 +6,18 @@ class ScannerDetectorPainter extends CustomPainter {
     required this.code,
     this.detectorPrimaryColor = Colors.white,
     this.detectorSecudaryColor = Colors.red,
+    required this.maxDetectedCode,
+    required this.minDetectedCode,
   });
 
   final List<Barcode> code;
 
   final Color detectorPrimaryColor;
   final Color detectorSecudaryColor;
+
+  final int maxDetectedCode;
+
+  final int minDetectedCode;
 
   @override
   void paint(Canvas canvas, Size size) {

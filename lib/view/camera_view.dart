@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -10,17 +11,17 @@ import '../scan_pay_controller.dart';
 class CameraView extends StatefulWidget {
   const CameraView({
     Key? key,
+    this.titleButtonText,
+    this.titleButtonTextStyle,
+    this.helpText,
+    this.helpTextStyle,
     required this.detectorCode,
     required this.onImage,
     this.accessInputField,
     this.colorBackground,
-    required this.scanPayType,
-    this.titleButtonText,
-    this.helpText,
-    this.titleButtonTextStyle,
     this.secondaryColor,
     this.primaryColor,
-    this.helpTextStyle,
+    required this.scanPayType,
   }) : super(key: key);
 
   final String? titleButtonText;
@@ -52,7 +53,7 @@ class CameraView extends StatefulWidget {
 
 class _CameraViewState extends State<CameraView>
     with WidgetsBindingObserver, TickerProviderStateMixin {
-  CameraController _controller = CameraController(
+  CameraController _cameraController = CameraController(
     const CameraDescription(
       name: '',
       lensDirection: CameraLensDirection.back,
@@ -66,7 +67,21 @@ class _CameraViewState extends State<CameraView>
   @override
   void initState() {
     super.initState();
+
     _initializeCamera();
+    _cameraController.addListener(() {
+      if (_cameraController.value.hasError) {
+        print('Camera error ${_cameraController.value.errorDescription}');
+      }
+      CameraController(
+        const CameraDescription(
+          name: '',
+          lensDirection: CameraLensDirection.back,
+          sensorOrientation: 0,
+        ),
+        ResolutionPreset.high,
+      );
+    });
   }
 
   void _initializeCamera() async {
@@ -92,8 +107,9 @@ class _CameraViewState extends State<CameraView>
       }
     }
     if (selectedCamera != null) {
-      _controller = CameraController(selectedCamera, ResolutionPreset.high);
-      await _controller.initialize();
+      _cameraController =
+          CameraController(selectedCamera, ResolutionPreset.high);
+      await _cameraController.initialize();
       setState(() {
         _cameraIndex = cameras.indexOf(selectedCamera!);
       });
@@ -107,17 +123,17 @@ class _CameraViewState extends State<CameraView>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopLiveFeed();
-    _controller.dispose();
+    _cameraController.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_controller.value.isInitialized) {
+    if (_cameraController.value.isInitialized) {
       return;
     }
     if (state == AppLifecycleState.inactive) {
-      _controller.dispose();
+      _cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
       if (mounted) {
@@ -134,11 +150,11 @@ class _CameraViewState extends State<CameraView>
   }
 
   Widget _body() {
-    if (_controller.value.isInitialized == false) {
+    if (_cameraController.value.isInitialized == false) {
       return Container();
     }
     final size = MediaQuery.of(context).size;
-    var scale = (size.aspectRatio) * _controller.value.aspectRatio;
+    var scale = (size.aspectRatio) * _cameraController.value.aspectRatio;
     if (scale < 1) scale = 1 / scale;
     return Stack(
       fit: StackFit.expand,
@@ -146,7 +162,7 @@ class _CameraViewState extends State<CameraView>
         Transform.scale(
           scale: scale,
           child: Center(
-            child: CameraPreview(_controller),
+            child: CameraPreview(_cameraController),
           ),
         ),
         ColorFiltered(
@@ -283,7 +299,7 @@ class _CameraViewState extends State<CameraView>
 
   Future _startLiveFeed() async {
     final camera = fiancialScannerCameras[_cameraIndex];
-    _controller = CameraController(
+    _cameraController = CameraController(
       camera,
       ResolutionPreset.high,
       enableAudio: false,
@@ -291,22 +307,22 @@ class _CameraViewState extends State<CameraView>
           ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
     );
-    _controller.initialize().then((_) {
+    _cameraController.initialize().then((_) {
       if (!mounted) {
         return;
       }
-      _controller.startImageStream(_processCameraImage);
+      _cameraController.startImageStream(_processCameraImage);
       setState(() {});
     });
   }
 
   Future _stopLiveFeed() async {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_controller.value.isInitialized == false) {
-        await _controller.stopImageStream();
-        await _controller.dispose();
+      if (_cameraController.value.isInitialized == false) {
+        await _cameraController.stopImageStream();
+        await _cameraController.dispose();
       }
-      _controller;
+      _cameraController;
     });
   }
 
@@ -347,7 +363,7 @@ class _CameraViewState extends State<CameraView>
     super.deactivate();
     _stopLiveFeed();
     _stopLiveFeed();
-    _controller.dispose();
+    _cameraController.dispose();
   }
 }
 

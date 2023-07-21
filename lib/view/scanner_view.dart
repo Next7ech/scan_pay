@@ -11,40 +11,48 @@ class ScannerView extends StatefulWidget {
   const ScannerView({
     super.key,
     required this.onSuccess,
-    this.digitableBoletoPage,
-    this.backgroundColor,
     required this.scanningType,
+    required this.digitableBoletoPage,
+    required this.maxDetectedCode,
+    required this.minDetectedCode,
+    required this.titleButtonText,
+    required this.helpText,
+    required this.titleButtonTextStyle,
+    required this.helpTextStyle,
+    required this.backgroundColor,
     required this.detectorPrimaryColor,
-    required this.detectorSecudaryColor,
-    this.headerText,
-    this.titleButtonText,
-    this.titleButtonTextStyle,
-    this.secondaryColor,
-    this.primaryColor,
-    this.helpTextStyle,
+    required this.detectorSecondaryColor,
+    required this.secondaryColor,
+    required this.primaryColor,
   });
-  final String? titleButtonText;
+  final ScanPayType scanningType;
 
-  final String? headerText;
+  final int maxDetectedCode;
 
-  final Color? secondaryColor;
+  final int minDetectedCode;
 
-  final Color? primaryColor;
+  final String titleButtonText;
 
-  final TextStyle? titleButtonTextStyle;
+  final String helpText;
 
-  final TextStyle? helpTextStyle;
+  final TextStyle titleButtonTextStyle;
+
+  final TextStyle helpTextStyle;
+
+  final Color backgroundColor;
+
+  final Color detectorPrimaryColor;
+
+  final Color detectorSecondaryColor;
+
+  final Color secondaryColor;
+
+  final Color primaryColor;
 
   final Function(String) onSuccess;
 
-  final Function()? digitableBoletoPage;
+  final Function() digitableBoletoPage;
 
-  final Color? backgroundColor;
-
-  final ScanPayType scanningType;
-
-  final Color? detectorPrimaryColor;
-  final Color? detectorSecudaryColor;
   @override
   State<ScannerView> createState() => _ScannerViewState();
 }
@@ -79,7 +87,7 @@ class _ScannerViewState extends State<ScannerView> {
   Widget build(BuildContext context) {
     return CameraView(
       scanPayType: widget.scanningType,
-      helpText: widget.headerText,
+      helpText: widget.helpText,
       titleButtonText: widget.titleButtonText,
       titleButtonTextStyle: widget.titleButtonTextStyle,
       secondaryColor: widget.secondaryColor,
@@ -104,13 +112,20 @@ class _ScannerViewState extends State<ScannerView> {
         inputImage.metadata?.rotation != null) {
       final painter = ScannerDetectorPainter(
         code: code,
-        detectorPrimaryColor: widget.detectorPrimaryColor ?? Colors.white,
-        detectorSecudaryColor: widget.detectorSecudaryColor ?? Colors.red,
+        detectorPrimaryColor: widget.detectorPrimaryColor,
+        detectorSecudaryColor: widget.detectorSecondaryColor,
+        maxDetectedCode: widget.maxDetectedCode,
+        minDetectedCode: widget.minDetectedCode,
       );
       _detectorCode = CustomPaint(painter: painter);
 
-      if (_detectorCode != null && code.isNotEmpty) {
+      if (widget.scanningType == ScanPayType.barcode &&
+          code.isNotEmpty &&
+          code.first.rawValue != null &&
+          code.first.rawValue!.length >= widget.minDetectedCode &&
+          code.first.rawValue!.length <= widget.maxDetectedCode) {
         _canProcess = false;
+        _barcodeScanner.close();
         widget.onSuccess(code.first.rawValue ?? '');
       }
     }
