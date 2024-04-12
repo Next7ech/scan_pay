@@ -50,8 +50,7 @@ class CameraView extends StatefulWidget {
   State<CameraView> createState() => _CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView>
-    with WidgetsBindingObserver, TickerProviderStateMixin {
+class _CameraViewState extends State<CameraView> with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController _controller = CameraController(
     const CameraDescription(
       name: '',
@@ -77,8 +76,7 @@ class _CameraViewState extends State<CameraView>
     final initialDirection = widget.initialDirection;
     CameraDescription? selectedCamera;
     for (var camera in cameras) {
-      if (camera.lensDirection == initialDirection &&
-          camera.sensorOrientation == 90) {
+      if (camera.lensDirection == initialDirection && camera.sensorOrientation == 90) {
         selectedCamera = camera;
         break;
       }
@@ -129,7 +127,11 @@ class _CameraViewState extends State<CameraView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _body(),
+      body: Visibility(
+        visible: widget.scanPayType == ScanPayType.barcode,
+        replacement: bodyQrCode(),
+        child: _body(),
+      ),
     );
   }
 
@@ -222,14 +224,12 @@ class _CameraViewState extends State<CameraView>
                     child: Center(
                         child: Text(
                       widget.helpText ?? '',
-                      style: widget.helpTextStyle ??
-                          Theme.of(context).textTheme.labelLarge,
+                      style: widget.helpTextStyle ?? Theme.of(context).textTheme.labelLarge,
                     )),
                   ),
                   Visibility(
                     visible: false,
-                    replacement:
-                        IconButton(onPressed: () {}, icon: const Offstage()),
+                    replacement: IconButton(onPressed: () {}, icon: const Offstage()),
                     child: FlashOnWidget(
                       onPressed: () {},
                     ),
@@ -281,15 +281,23 @@ class _CameraViewState extends State<CameraView>
     );
   }
 
+  bodyQrCode() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        CameraPreview(_controller),
+        Center(child: Container(width: 250, height: 250, decoration: BoxDecoration(border: Border.all(color: Colors.white, width: 2)))),
+      ],
+    );
+  }
+
   Future _startLiveFeed() async {
     final camera = fiancialScannerCameras[_cameraIndex];
     _controller = CameraController(
       camera,
       ResolutionPreset.high,
       enableAudio: false,
-      imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21
-          : ImageFormatGroup.bgra8888,
+      imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
     );
     _controller.initialize().then((_) {
       if (!mounted) {
@@ -318,15 +326,12 @@ class _CameraViewState extends State<CameraView>
 
   InputImage? _inputImageFromCameraImage(CameraImage image) {
     final camera = fiancialScannerCameras[_cameraIndex];
-    final rotation =
-        InputImageRotationValue.fromRawValue(camera.sensorOrientation);
+    final rotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
     if (rotation == null) return null;
 
     final format = InputImageFormatValue.fromRawValue(image.format.raw);
 
-    if (format == null ||
-        (Platform.isAndroid && format != InputImageFormat.nv21) ||
-        (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
+    if (format == null || (Platform.isAndroid && format != InputImageFormat.nv21) || (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
 
     if (image.planes.length != 1) return null;
     final plane = image.planes.first;

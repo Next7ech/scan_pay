@@ -45,7 +45,7 @@ class _HomeFinancialState extends State<HomeFinancial> {
           onPressed: () {
             scanPay(
               context,
-              scanPayType: ScanPayType.barcode,
+              scanPayType: ScanPayType.qrCode,
               backgroundColor: Colors.black.withOpacity(0.5),
               detectorPrimaryColor: Colors.white,
               detectorSecudaryColor: Colors.red,

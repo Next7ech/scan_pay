@@ -27,8 +27,7 @@ class ControllerCamera extends ChangeNotifier {
     CameraDescription? selectedCamera;
 
     for (var camera in cameras) {
-      if (camera.lensDirection == initialDirection &&
-          camera.sensorOrientation == 90) {
+      if (camera.lensDirection == initialDirection && camera.sensorOrientation == 90) {
         selectedCamera = camera;
         break;
       }
@@ -44,8 +43,7 @@ class ControllerCamera extends ChangeNotifier {
     }
 
     if (selectedCamera != null) {
-      cameraController =
-          CameraController(selectedCamera, ResolutionPreset.high);
+      cameraController = CameraController(selectedCamera, ResolutionPreset.high);
       await cameraController?.initialize();
       notifyListeners();
       startLiveFeed();
@@ -60,9 +58,7 @@ class ControllerCamera extends ChangeNotifier {
       camera,
       ResolutionPreset.high,
       enableAudio: false,
-      imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21
-          : ImageFormatGroup.bgra8888,
+      imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
     );
     cameraController?.initialize().then((_) {
       cameraController?.startImageStream(processCameraImage);
@@ -84,15 +80,12 @@ class ControllerCamera extends ChangeNotifier {
 
   InputImage? inputImageFromCameraImage(CameraImage image) {
     final camera = fiancialScannerCameras[_cameraIndex];
-    final rotation =
-        InputImageRotationValue.fromRawValue(camera.sensorOrientation);
+    final rotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
     if (rotation == null) return null;
 
     final format = InputImageFormatValue.fromRawValue(image.format.raw);
 
-    if (format == null ||
-        (Platform.isAndroid && format != InputImageFormat.nv21) ||
-        (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
+    if (format == null || (Platform.isAndroid && format != InputImageFormat.nv21) || (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
 
     if (image.planes.length != 1) return null;
     final plane = image.planes.first;
@@ -101,9 +94,9 @@ class ControllerCamera extends ChangeNotifier {
       bytes: plane.bytes,
       metadata: InputImageMetadata(
         size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation, // used only in Android
-        format: format, // used only in iOS
-        bytesPerRow: plane.bytesPerRow, // used only in iOS
+        rotation: rotation,
+        format: format,
+        bytesPerRow: plane.bytesPerRow,
       ),
     );
   }
